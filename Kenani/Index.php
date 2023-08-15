@@ -1,38 +1,70 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Document</title>
 	<link rel="stylesheet" type="text/css" href="./style.css">
+
 </head>
+
 <body style="margin:auto 0;height:100vh;display:flex;">
 	<div class="main-div">
 		<div class="item-div">
 
 			<p class="p1">Subdomain Bruteforce</p>
 			<div>
-				<input type="text" name="search" placeholder="Search Domain" class="search-box">
-				<button class="search-btn">Search</button>
+				<div>
+					<input type="text" id="domainInput" name="search" placeholder="Search Domain" class="search-box">
+					<input type="file" id="uploaded_file" name="uploaded_file">
+					<button class="search-btn" onclick="searchDomain()">Search</button>
+				</div>
 			</div>
-			<form action="upload.php" method="post" enctype="multipart/form-data">
-				<input style="color:green; font-size:15px;width:15rem;" type="file" name="fileToUpload" id="fileToUpload">
-				<button class="upload" type="submit" value="Upload Image">Upload</button>
-			</form>
+
+			<div id="result"></div> <!-- This is where the results will be displayed -->
 		</div>
 	</div>
+	<script>
+		function searchDomain() {
+			var domainInput = document.getElementById("domainInput").value;
+			var uploadedFile = document.getElementById("uploaded_file").files[0];
 
-	<!-- Shearch Box qe e ka me shkru te dhanat e subdomainit 
+			var formData = new FormData();
+			formData.append("domain", domainInput);
+			formData.append("uploaded_file", uploadedFile);
 
-psh: google.com (search) 
+			var xhr = new XMLHttpRequest();
+			xhr.open("POST", "upload.php", true);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState == 4 && xhr.status == 200) {
+					console.log(xhr.responseText); // Log the response text to the console
+					var response = JSON.parse(xhr.responseText);
+					var resultDiv = document.getElementById("result");
+					resultDiv.innerHTML = ""; // Clear previous results
 
-incinailzohet me python brute force e cila ben kerkime online te subdomainve te google.com 
-//nepermjet listes e cila e ka me larte ose kudo qofte sipas dizajnit te frontit, me pas edhe ni uplouad .txt
-
-dmt lista e subdomainve potencial 
--->
-
+					if (response.status === "success") {
+						if (Array.isArray(response.subdomains)) {
+							if (response.subdomains.length === 0) {
+								resultDiv.textContent = "No subdomains found.";
+							} else {
+								response.subdomains.forEach(function (subdomain) {
+									var subdomainElement = document.createElement("p");
+									subdomainElement.textContent = subdomain;
+									resultDiv.appendChild(subdomainElement);
+								});
+							}
+						} else {
+							resultDiv.textContent = "No subdomains found.";
+						}
+					} else {
+						resultDiv.textContent = "Error: " + response.message;
+					}
+				}
+			};
+			xhr.send(formData);
+		}
+	</script>
 </body>
+
 </html>
-
-

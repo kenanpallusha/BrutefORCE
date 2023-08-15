@@ -20,9 +20,9 @@ if (mysqli_num_rows($result) == 0) {
     $create_db_query = "CREATE DATABASE $database_name";
 
     if (mysqli_query($conn, $create_db_query)) {
-        echo "Database 'bruteforce' created successfully.";
+        // Database created successfully
     } else {
-        echo "Error creating database: " . mysqli_error($conn);
+        // Error creating database
     }
 }
 
@@ -51,65 +51,73 @@ if (mysqli_num_rows($result) == 0) {
     )";
 
     if (mysqli_query($conn, $create_table_query)) {
-        echo "Table 'file' created successfully.";
+        // Table created successfully
     } else {
-        echo "Error creating table: " . mysqli_error($conn);
+        // Error creating table
     }
 }
 
-$target_dir = "uploads/";
-$target_file = $target_dir . basename($_FILES["fileToUpload"]["name"]);
-$uploadOk = 1;
-$fileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+// Initialize JSON response array
+$response = array();
 
-
-
-
-// Check if file is a valid image or text/doc file
-if (isset($_POST["submit"])) {
-    if (in_array($fileType, array("jpg", "jpeg", "png", "gif", "txt", "doc", "docx"))) {
-        echo "File is a valid type.";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Check if file was uploaded successfully
+    if (isset($_FILES["uploaded_file"]) && $_FILES["uploaded_file"]["error"] === UPLOAD_ERR_OK) {
+        $target_dir = "uploads/";
+        $target_file = $target_dir . basename($_FILES["uploaded_file"]["name"]);
         $uploadOk = 1;
-    } else {
-        echo "Invalid file type. Only JPG, JPEG, PNG, GIF, TXT, DOC, and DOCX files are allowed.";
-        $uploadOk = 0;
-    }
-}
+        $fileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+        // Read the content of the uploaded file into subdomains_content
+        $subdomains_content = file_get_contents($_FILES["uploaded_file"]["tmp_name"]);
 
-// Check if file already exists
-if (file_exists($target_file)) {
-    echo "Sorry, file already exists.";
-    $uploadOk = 0;
-}
-
-// Check file size
-if ($_FILES["fileToUpload"]["size"] > 500000) {
-    echo "Sorry, your file is too large.";
-    $uploadOk = 0;
-}
-
-// Check if $uploadOk is set to 0 by an error
-if ($uploadOk == 0) {
-    echo "Sorry, your file was not uploaded.";
-// if everything is ok, try to upload file
-} else {
-    if (move_uploaded_file($_FILES["fileToUpload"]["tmp_name"], $target_file)) {
-        // File uploaded successfully, now insert the file details into the database
-        $file_name = htmlspecialchars(basename($_FILES["fileToUpload"]["name"]));
-        $file_type = $_FILES["fileToUpload"]["type"];
-        $file_size = $_FILES["fileToUpload"]["size"];
-
-        // Prepare the SQL query
-        $sql = "INSERT INTO file (file, type, size) VALUES ('$file_name', '$file_type', $file_size)";
-
-        // Execute the query
-        if (mysqli_query($conn, $sql)) {
-            echo "The file $file_name has been uploaded and its details have been saved to the database.";
-        } else {
-            echo "Sorry, there was an error uploading your file and saving its details to the database: " . mysqli_error($conn);
+        if (isset($_POST["submit"])) {
+            if (in_array($fileType, array("jpg", "jpeg", "png", "gif", "txt", "doc", "docx"))) {
+                $uploadOk = 1;
+            } else {
+                $uploadOk = 0;
+            }
         }
+        // Check if $uploadOk is set to 0 by an error
+
+        if (move_uploaded_file($_FILES["uploaded_file"]["tmp_name"], $target_file)) {
+            // File uploaded successfully, now insert the file details into the database
+            $file_name = htmlspecialchars(basename($_FILES["uploaded_file"]["name"]));
+            $file_type = $_FILES["uploaded_file"]["type"];
+            $file_size = $_FILES["uploaded_file"]["size"];
+
+            // Prepare the SQL query
+            $sql = "INSERT INTO file (file, type, size) VALUES ('$file_name', '$file_type', $file_size)";
+
+            // Execute the query
+            if (mysqli_query($conn, $sql)) {
+                // Do nothing here
+            } else {
+                // Do nothing here
+            }
+        } else {
+            // Do nothing here
+        }
+
+        // Split the content into subdomains
+        $subdomains = explode("\n", $subdomains_content);
+
+        // Set success message in response
+        $response["status"] = "success";
+        $response["message"] = "File uploaded and processed successfully.";
     } else {
-        echo "Sorry, there was an error uploading your file.";
+        // Set error message in response
+        $response["status"] = "error";
+        $response["message"] = "File upload failed.";
     }
 }
+// Create a response array that includes the subdomains
+$response = array(
+    "status" => "success",
+    "message" => "File uploaded and processed successfully.",
+    "subdomains" => $subdomains
+);
+
+// Send JSON response
+header("Content-Type: application/json");
+echo json_encode($response);
 ?>
