@@ -99,23 +99,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         // Split the content into subdomains
-        $subdomains = explode("\n", $subdomains_content);
+        $subdomains = array_map('trim', explode("\n", $subdomains_content));
+        $subdomains = array_filter($subdomains, 'strlen'); // Remove empty lines
 
         // Set success message in response
         $response["status"] = "success";
         $response["message"] = "File uploaded and processed successfully.";
+
+        // Attach subdomains to the response
+        $response["subdomains"] = $subdomains;
     } else {
         // Set error message in response
         $response["status"] = "error";
         $response["message"] = "File upload failed.";
     }
 }
-// Create a response array that includes the subdomains
-$response = array(
-    "status" => "success",
-    "message" => "File uploaded and processed successfully.",
-    "subdomains" => $subdomains
-);
 
 // Send JSON response
 header("Content-Type: application/json");

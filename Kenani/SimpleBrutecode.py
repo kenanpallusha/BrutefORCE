@@ -3,17 +3,17 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/bruteforce.php", methods=["GET"])
+@app.route("/upload.php", methods=["POST"])
 def upload_file():
     domain = request.form.get("domain")
 
     uploaded_file = request.files["uploaded_file"]
     subdomains_content = uploaded_file.read().decode("utf-8")
-    subdomains = subdomains_content.splitlines()
+    subdomains = [subdomain.strip() for subdomain in subdomains_content.splitlines()]
 
     result = []
     for subdomain in subdomains:
-        subdomain_url = f"https://{subdomain.strip()}.{domain}"
+        subdomain_url = f"https://{subdomain}.{domain}"
         try:
             response = requests.get(subdomain_url)
             if response.status_code == 200:
@@ -21,7 +21,12 @@ def upload_file():
         except:
             pass
 
-    return jsonify(result)
+    # Log the data in the console
+    print("Domain:", domain)
+    print("Subdomains:", subdomains)
+    print("Valid Subdomains:", result)
+
+    return jsonify({"subdomains": result})
 
 if __name__ == "__main__":
     app.run()

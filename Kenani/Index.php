@@ -4,21 +4,19 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Document</title>
+	<title>Subdomain Scanner</title>
 	<link rel="stylesheet" type="text/css" href="./style.css">
-
 </head>
 
 <body style="margin:auto 0;height:100vh;display:flex;">
 	<div class="main-div">
 		<div class="item-div">
-
-			<p class="p1">Subdomain Bruteforce</p>
+			<p class="p1">Subdomain Scanner</p>
 			<div>
 				<div>
-					<input type="text" id="domainInput" name="search" placeholder="Search Domain" class="search-box">
-					<input type="file" id="uploaded_file" name="uploaded_file">
-					<button class="search-btn" onclick="searchDomain()">Search</button>
+					<input type="text" id="domainInput" name="search" placeholder="Enter Domain" class="search-box">
+					<input type="file" id="uploaded_file" name="uploaded_file" accept=".txt" enctype="multipart/form-data">
+					<button class="search-btn" onclick="searchDomain()">Scan Subdomains</button>
 				</div>
 			</div>
 
@@ -43,22 +41,16 @@
 					var resultDiv = document.getElementById("result");
 					resultDiv.innerHTML = ""; // Clear previous results
 
-					if (response.status === "success") {
-						if (Array.isArray(response.subdomains)) {
-							if (response.subdomains.length === 0) {
-								resultDiv.textContent = "No subdomains found.";
-							} else {
-								response.subdomains.forEach(function (subdomain) {
-									var subdomainElement = document.createElement("p");
-									subdomainElement.textContent = subdomain;
-									resultDiv.appendChild(subdomainElement);
-								});
-							}
-						} else {
-							resultDiv.textContent = "No subdomains found.";
-						}
+					if (response.subdomains && response.subdomains.length > 0) {
+						response.subdomains.forEach(function (subdomain) {
+							var subdomainElement = document.createElement("p");
+							subdomainElement.textContent = subdomain;
+							resultDiv.appendChild(subdomainElement);
+						});
 					} else {
-						resultDiv.textContent = "Error: " + response.message;
+						var messageElement = document.createElement("p");
+						messageElement.textContent = "No valid subdomains found.";
+						resultDiv.appendChild(messageElement);
 					}
 				}
 			};
