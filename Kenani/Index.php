@@ -32,14 +32,14 @@
 			formData.append("domain", domainInput);
 			formData.append("uploaded_file", uploadedFile);
 
+			var resultDiv = document.getElementById("result");
+			resultDiv.innerHTML = ""; // Clear previous results
+
 			var xhr = new XMLHttpRequest();
 			xhr.open("POST", "upload.php", true);
 			xhr.onreadystatechange = function () {
 				if (xhr.readyState == 4 && xhr.status == 200) {
-					console.log(xhr.responseText); // Log the response text to the console
 					var response = JSON.parse(xhr.responseText);
-					var resultDiv = document.getElementById("result");
-					resultDiv.innerHTML = ""; // Clear previous results
 
 					if (response.subdomains && response.subdomains.length > 0) {
 						response.subdomains.forEach(function (subdomain) {
@@ -56,6 +56,15 @@
 			};
 			xhr.send(formData);
 		}
+
+		// SSE to receive real-time updates
+		var eventSource = new EventSource("sse.php");
+		eventSource.onmessage = function(event) {
+			var subdomain = event.data;
+			var subdomainElement = document.createElement("p");
+			subdomainElement.textContent = subdomain;
+			resultDiv.appendChild(subdomainElement);
+		};
 	</script>
 </body>
 

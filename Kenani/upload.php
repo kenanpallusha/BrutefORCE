@@ -47,7 +47,8 @@ if (mysqli_num_rows($result) == 0) {
         id INT AUTO_INCREMENT PRIMARY KEY,
         file VARCHAR(255) NOT NULL,
         type VARCHAR(50) NOT NULL,
-        size INT NOT NULL
+        size INT NOT NULL,
+        content LONGTEXT NOT NULL
     )";
 
     if (mysqli_query($conn, $create_table_query)) {
@@ -60,60 +61,58 @@ if (mysqli_num_rows($result) == 0) {
 // Initialize JSON response array
 $response = array();
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Check if file was uploaded successfully
-    if (isset($_FILES["uploaded_file"]) && $_FILES["uploaded_file"]["error"] === UPLOAD_ERR_OK) {
-        $target_dir = "uploads/";
-        $target_file = $target_dir . basename($_FILES["uploaded_file"]["name"]);
-        $uploadOk = 1;
-        $fileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
-        // Read the content of the uploaded file into subdomains_content
-        $subdomains_content = file_get_contents($_FILES["uploaded_file"]["tmp_name"]);
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["uploaded_content"])) {
+    $subdomains_content = $_POST["uploaded_content"];
+    
+    // File content details
+    $file_name = "uploaded_file.txt"; // Change this to the appropriate file name
+    $file_type = "text/plain"; // Change this to the appropriate file type
+    $file_size = strlen($subdomains_content);
 
-        if (isset($_POST["submit"])) {
-            if (in_array($fileType, array("jpg", "jpeg", "png", "gif", "txt", "doc", "docx"))) {
-                $uploadOk = 1;
-            } else {
-                $uploadOk = 0;
-            }
-        }
-        // Check if $uploadOk is set to 0 by an error
+    // Prepare the SQL query
+    $sql = "INSERT INTO file (file, type, size, content) VALUES ('$file_name', '$file_type', $file_size, '$subdomains_content')";
 
-        if (move_uploaded_file($_FILES["uploaded_file"]["tmp_name"], $target_file)) {
-            // File uploaded successfully, now insert the file details into the database
-            $file_name = htmlspecialchars(basename($_FILES["uploaded_file"]["name"]));
-            $file_type = $_FILES["uploaded_file"]["type"];
-            $file_size = $_FILES["uploaded_file"]["size"];
-
-            // Prepare the SQL query
-            $sql = "INSERT INTO file (file, type, size) VALUES ('$file_name', '$file_type', $file_size)";
-
-            // Execute the query
-            if (mysqli_query($conn, $sql)) {
-                // Do nothing here
-            } else {
-                // Do nothing here
-            }
-        } else {
-            // Do nothing here
-        }
-
-        // Split the content into subdomains
-        $subdomains = array_map('trim', explode("\n", $subdomains_content));
-        $subdomains = array_filter($subdomains, 'strlen'); // Remove empty lines
-
-        // Set success message in response
+    if (mysqli_query($conn, $sql)) {
+        // Insert successful
         $response["status"] = "success";
-        $response["message"] = "File uploaded and processed successfully.";
-
-        // Attach subdomains to the response
-        $response["subdomains"] = $subdomains;
+        $response["message"] = "File content uploaded and stored successfully in the database.";
     } else {
-        // Set error message in response
+        // Insert failed
         $response["status"] = "error";
-        $response["message"] = "File upload failed.";
+        $response["message"] = "Failed to upload and store file content in the database.";
     }
 }
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["tested_content"])) {
+    $tested_websites_content = $_POST["tested_content"];
+
+    // Connect to the MySQL server
+    $conn = mysqli_connect($servername, $username, $password, $database_name);
+
+    if (!$conn) {
+        die('Could not connect to MySQL: ' . mysqli_connect_error());
+    }
+
+    // Insert the tested websites content into the database
+    $insert_tested_websites_query = "INSERT INTO tested_websites (content) VALUES ('$tested_websites_content')";
+
+    if (mysqli_query($conn, $insert_tested_websites_query)) {
+        // Insert successful
+        $response["status"] = "success";
+        $response["message"] = "Tested websites content uploaded and stored successfully in the database.";
+    } else {
+        // Insert failed
+        $response["status"] = "error";
+        $response["message"] = "Failed to upload and store tested websites content in the database.";
+    }
+
+    // Close the MySQL connection
+    mysqli_close($conn);
+
+    // Send JSON response
+    header("Content-Type: application/json");
+    echo json_encode($response);
+}
+
 
 // Send JSON response
 header("Content-Type: application/json");
