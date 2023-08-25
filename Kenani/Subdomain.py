@@ -6,8 +6,8 @@ from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  
-socketio = SocketIO(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def is_subdomain_reachable(subdomain_url):
     try:
@@ -23,7 +23,7 @@ def ws_connect():
     print("WebSocket client connected")
 
 def send_realtime_update(subdomain):
-    emit('update', subdomain)
+    socketio.emit('update', subdomain)
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
@@ -39,13 +39,13 @@ def upload_file():
         
         if is_subdomain_reachable(subdomain_url):
             result.append(subdomain_url)
-
+            print("here")   
             # Ping the subdomain
             ping_process = subprocess.Popen(['ping', '-c', '1', subdomain_url], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             ping_output, ping_error = ping_process.communicate()
             if ping_process.returncode == 0:
                 print(f"Ping successful for {subdomain_url}")
-                send_realtime_update(subdomain_url)
+                send_realtime_update(subdomain_url)  # Emit a WebSocket message
 
     print("Domain:", domain)
     print("Subdomains:", subdomains)
