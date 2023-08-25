@@ -2,8 +2,12 @@ import os
 import requests
 import subprocess
 from flask import Flask, request, jsonify
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})  
+socketio = SocketIO(app)
 
 def is_subdomain_reachable(subdomain_url):
     try:
@@ -14,7 +18,14 @@ def is_subdomain_reachable(subdomain_url):
         pass
     return False
 
-@app.route("/upload.php", methods=["POST"])
+@socketio.on('connect')
+def ws_connect():
+    print("WebSocket client connected")
+
+def send_realtime_update(subdomain):
+    emit('update', subdomain)
+
+@app.route("/upload", methods=["POST"])
 def upload_file():
     domain = request.form.get("domain")
 
@@ -34,31 +45,13 @@ def upload_file():
             ping_output, ping_error = ping_process.communicate()
             if ping_process.returncode == 0:
                 print(f"Ping successful for {subdomain_url}")
-
-    # Determine the path for tested_websites.txt in the same folder as Subdomain.py
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-    tested_websites_path = os.path.join(script_directory, 'tested_websites.txt')
-
-    # Save tested websites to the created file
-    with open(tested_websites_path, 'w') as f:
-        for subdomain_url in result:
-            f.write(subdomain_url + '\n')
+                send_realtime_update(subdomain_url)
 
     print("Domain:", domain)
     print("Subdomains:", subdomains)
     print("Valid Subdomains:", result)
 
-    # Display all tested subdomains in the console
-    for subdomain_url in result:
-        print("Tested Subdomain:", subdomain_url)
-
-    # Send the list of tested websites to upload.php using a local file path
-    with open(tested_websites_path, 'r') as f:
-        tested_websites = f.read()
-        response = requests.post('http://localhost/upload.php', data={'tested_content': tested_websites})
-        print(response.text)  # Print the response from upload.php
-
     return jsonify({"subdomains": result})
 
 if __name__ == "__main__":
-    app.run()
+    socketio.run(app, host="localhost", port=5001)
